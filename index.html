@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finanzas 360 - Standalone</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Brain.js (Red Neuronal Local) -->
+    <script src="https://unpkg.com/brain.js"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="bg-gray-100">
+
+    <!-- 0. MARKET TICKER (CONEXIÓN INTERNET REAL) -->
+    <div class="ticker-wrap">
+        <div class="ticker" id="marketTicker">
+            <span class="ticker__item">Cargando datos del mercado en tiempo real...</span>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-blue-700 shadow-md">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-2xl" href="#">
+                <i class="fas fa-chart-line me-2 text-white"></i>Finanzas 360 <span class="text-xs bg-green-400 text-green-900 px-2 rounded ml-2 font-bold">ONLINE</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="container py-5">
+        
+        <!-- 1. DASHBOARD -->
+        <div class="row mb-5">
+            <div class="col-12 mb-3">
+                <h2 class="text-gray-800 font-bold text-2xl border-l-4 border-blue-600 pl-3">Panel de Salud Financiera</h2>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-white hover:shadow-lg transition">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-gray-500 text-sm uppercase font-semibold">Patrimonio Neto</p>
+                            <h3 class="text-3xl font-bold text-gray-800" id="displayNetWorth">$0.00</h3>
+                        </div>
+                        <div class="bg-blue-100 p-3 rounded-full text-blue-600"><i class="fas fa-wallet fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-white hover:shadow-lg transition">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-gray-500 text-sm uppercase font-semibold">Ratio de Ahorro</p>
+                            <h3 class="text-3xl font-bold text-green-600" id="displaySavingsRate">0%</h3>
+                        </div>
+                        <div class="bg-green-100 p-3 rounded-full text-green-600"><i class="fas fa-piggy-bank fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4 mb-3">
+                <div class="card p-4 bg-white hover:shadow-lg transition">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="text-gray-500 text-sm uppercase font-semibold">Ratio de Deuda</p>
+                            <h3 class="text-3xl font-bold text-red-500" id="displayDebtRatio">0%</h3>
+                        </div>
+                        <div class="bg-red-100 p-3 rounded-full text-red-600"><i class="fas fa-chart-pie fa-2x"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. CONTROL DE GASTOS -->
+        <div class="row mb-5">
+            <div class="col-lg-4 mb-4">
+                
+                <!-- SMART INPUT (REGEX LOCAL) -->
+                <div class="card mb-3 smart-input-box">
+                    <div class="card-body">
+                        <h6 class="text-indigo-700 font-bold mb-2"><i class="fas fa-brain me-1"></i> Entrada Inteligente</h6>
+                        <p class="text-xs text-gray-600 mb-2">Ej: "Gasto de 200 en comida" o "Ingreso 1500 en salario"</p>
+                        <div class="input-group">
+                            <input type="text" id="smartInput" class="form-control form-control-sm border-indigo-300" placeholder="Escribe aquí...">
+                            <button class="btn btn-indigo-600 bg-indigo-600 text-white hover:bg-indigo-700" type="button" onclick="processLocalSmartInput()">
+                                <i class="fas fa-bolt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario Manual -->
+                <div class="card h-auto">
+                    <div class="card-header bg-white font-bold py-2 text-gray-700">Entrada Manual</div>
+                    <div class="card-body">
+                        <form id="transactionForm">
+                            <div class="mb-2">
+                                <label class="text-xs text-gray-500 font-bold uppercase">Tipo</label>
+                                <select class="form-select form-select-sm" id="type" onchange="toggleDebtField()">
+                                    <option value="expense">Gasto</option>
+                                    <option value="income">Ingreso</option>
+                                    <option value="debt">Deuda Total</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="text-xs text-gray-500 font-bold uppercase">Monto</label>
+                                <input type="number" class="form-control form-control-sm" id="amount" placeholder="0.00" required>
+                            </div>
+                            <div class="mb-3" id="categoryWrapper">
+                                <label class="text-xs text-gray-500 font-bold uppercase">Categoría</label>
+                                <select class="form-select form-select-sm" id="category">
+                                    <option value="Vivienda">Vivienda</option>
+                                    <option value="Alimentación">Alimentación</option>
+                                    <option value="Transporte">Transporte</option>
+                                    <option value="Entretenimiento">Entretenimiento</option>
+                                    <option value="Servicios">Servicios</option>
+                                    <option value="Salud">Salud</option>
+                                    <option value="Otros">Otros</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100 bg-gray-800 hover:bg-gray-900 border-none py-2 text-sm">
+                                <i class="fas fa-check me-1"></i> Registrar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 p-3">
+                            <h5 class="card-title text-center text-gray-700 text-sm font-bold mb-3">Distribución de Gastos</h5>
+                            <div class="chart-container">
+                                <canvas id="expensesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 p-3">
+                            <h5 class="card-title text-center text-gray-700 text-sm font-bold mb-3">Evolución Patrimonio</h5>
+                            <div class="chart-container">
+                                <canvas id="netWorthChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. INVERSIONES -->
+        <div class="row">
+            <div class="col-12 mb-3">
+                <h2 class="text-gray-800 font-bold text-2xl border-l-4 border-purple-600 pl-3">Inversión y Libertad Financiera</h2>
+            </div>
+
+            <div class="col-md-4 mb-4">
+                <div class="card p-4">
+                    <label class="form-label font-bold text-gray-700">Perfil de Riesgo</label>
+                    <select class="form-select mb-3" id="riskProfile" onchange="updatePortfolio()">
+                        <option value="conservador">Conservador (Bajo Riesgo)</option>
+                        <option value="moderado" selected>Moderado (Equilibrado)</option>
+                        <option value="agresivo">Agresivo (Crecimiento)</option>
+                    </select>
+
+                    <div id="riskDescription" class="alert alert-light text-xs text-gray-600 border-l-4 border-purple-500 mb-3">
+                        Balance ideal entre crecimiento y seguridad.
+                    </div>
+                    <ul id="allocationList" class="list-disc pl-5 text-sm text-gray-600"></ul>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card p-4">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <canvas id="portfolioChart"></canvas>
+                        </div>
+                        <div class="col-md-7">
+                            <h5 class="font-bold text-gray-800 mb-2">Recomendaciones</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-hover text-sm">
+                                    <thead class="table-light"><tr><th>Tipo</th><th>%</th><th>Instrumentos</th></tr></thead>
+                                    <tbody id="recommendationTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIDGET CHATBOT (BRAIN.JS - LOCAL) -->
+    <div id="chat-widget">
+        <div id="chat-window">
+            <div class="chat-header">
+                <div><i class="fas fa-brain me-2"></i>Asistente Local</div>
+                <button onclick="toggleChat()" class="text-white hover:text-gray-200"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="chat-messages d-flex flex-column" id="chat-messages">
+                <div class="msg msg-ai">Hola. Soy tu asistente local (Brain.js). Analizo tus datos sin salir de tu ordenador.</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" class="form-control border-none shadow-none text-sm" placeholder="Escribe 'ahorro', 'inversión'...">
+                <button onclick="sendMessage()" class="btn btn-primary btn-sm ms-2 bg-slate-800 border-none"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+
+        <button onclick="toggleChat()" class="btn rounded-circle text-white shadow-lg p-3 bg-slate-800 hover:bg-slate-700" style="width: 60px; height: 60px;">
+            <i class="fas fa-robot fa-lg"></i>
+        </button>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
